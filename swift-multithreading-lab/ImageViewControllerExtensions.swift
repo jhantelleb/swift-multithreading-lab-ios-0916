@@ -53,6 +53,46 @@ extension ImageViewController {
         print("Image is already filtered")
     }
     
+    func filterImage(with completion: @escaping (Bool) -> Void ) {
+        let queue = OperationQueue()
+        queue.name = "Image Filtration Queue"
+        queue.qualityOfService = .userInitiated
+        queue.maxConcurrentOperationCount = 1
+        
+        for filter in filtersToApply {
+            let filterQueue = FilterOperation(flatigram: flatigram, filter: filter)
+            filterQueue.completionBlock = {
+                if queue.operationCount == 0 {
+                    DispatchQueue.main.async(execute: {
+                    self.flatigram.state = .filtered
+                    completion(true)
+                    })
+                }
+            }
+            queue.addOperation( filterQueue )
+            print("Added FilterOperation with \(filter) to \(queue.name!)")
+        }
+    }
+    
+    func startProcess() {
+        self.filterButton.isEnabled = false
+        self.chooseImageButton.isEnabled = false
+        activityIndicator.startAnimating()
+        filterImage { (success) in
+            OperationQueue.main.addOperation {
+                if success {
+                    print("Would you look at that beautiful photo!")
+                    self.filterButton.isEnabled = true
+                    self.chooseImageButton.isEnabled = true
+                    self.imageView.image = self.flatigram.image
+                    self.activityIndicator.stopAnimating()
+                } else {
+                    print("Photo did not filter. :(")
+                }
+            }
+        }
+    }
+    
 }
 
 
@@ -120,3 +160,11 @@ extension ImageViewController: UIImagePickerControllerDelegate, UINavigationCont
     }
     
 }
+
+
+
+
+
+
+
+
